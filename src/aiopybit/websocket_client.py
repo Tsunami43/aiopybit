@@ -43,13 +43,27 @@ class ByBitWebSocketClient:
 			try:
 				message = await self.ws.recv()
 				data = json.loads(message)
-				logger.debug('Received: %s', data)
+				await self._handle_message(data)
 			except ConnectionClosed:
 				logger.warning('Connection closed')
 				self.is_connected = False
 				break
 			except Exception as e:
 				logger.error('Error in listener: %s', e)
+
+	async def _handle_message(self, data: dict[str, Any]) -> None:
+		"""Handle incoming WebSocket messages."""
+		if 'topic' in data:
+			topic = data.get('topic')
+			if topic in self.topic_handlers:
+				handler = self.topic_handlers[topic]
+				try:
+					if asyncio.iscoroutinefunction(handler):
+						await handler(data)
+					else:
+						handler(data)
+				except Exception as e:
+					logger.error('Error in handler: %s', e)
 
 	async def close(self) -> None:
 		"""Close WebSocket connection."""
