@@ -57,3 +57,20 @@ class ByBitPublicStreamsMixin:
 		logger.info('Subscribed to %s', topic)
 
 		return topic
+
+	async def subscribe_to_kline(
+		self,
+		category: str,
+		symbol: str,
+		interval: str,
+		on_message: Callable,
+	) -> str:
+		"""Subscribe to kline/candlestick updates."""
+		websocket = await self.get_websocket('public.' + category)
+		topic = f'kline.{interval}.{symbol}'
+		websocket.topic_handlers[topic] = on_message
+
+		await websocket.send(op='subscribe', args=[topic])
+		logger.info('Subscribed to %s', topic)
+
+		return topic
