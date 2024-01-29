@@ -1,6 +1,8 @@
 import asyncio
+import hmac
 import json
 import logging
+import time
 from typing import Any, Callable
 
 import websockets
@@ -12,8 +14,16 @@ logger = logging.getLogger('aiopybit')
 class ByBitWebSocketClient:
 	"""Basic WebSocket client for ByBit API."""
 
-	def __init__(self, url: str, ping_interval: int = 20):
+	def __init__(
+		self,
+		url: str,
+		api_key: str | None = None,
+		api_secret: str | None = None,
+		ping_interval: int = 20,
+	):
 		self.url = url
+		self.api_key = api_key
+		self.api_secret = api_secret
 		self.ws = None
 		self.is_connected = False
 		self.ping_interval = ping_interval
@@ -21,12 +31,46 @@ class ByBitWebSocketClient:
 		self.ping_task: asyncio.Task | None = None
 		self.listen_task: asyncio.Task | None = None
 
+	def _generate_signature(self, expires: int) -> str:
+		"""Generate authentication signature."""
+		if not self.api_secret:
+			raise ValueError('API secret required')
+
+		return hmac.new(
+			bytes(self.api_secret, 'utf-8'),
+			bytes(f'GET/realtime{expires}', 'utf-8'),
+			digestmod='sha256',
+		).hexdigest()
+
+	async def _authenticate(self) -> None:
+		"""Authenticate for private channels."""
+		if not self.api_key or not self.api_secret:
+			raise ValueError('API credentials required')
+
+		expires = int((time.time() + 1) * 1000)
+		signature = self._generate_signature(expires)
+
+		await self.send(op='auth', args=[self.api_key, expires, signature])
+
+		assert self.ws
+		response = await self.ws.recv()
+		auth_result = json.loads(response)
+
+		if not auth_result.get('success'):
+			raise ConnectionError('Authentication failed')
+
+		logger.info('Authentication successful')
+
 	async def connect(self) -> None:
 		"""Establish WebSocket connection."""
 		try:
 			self.ws = await websockets.connect(self.url)
 			self.is_connected = True
 			logger.info('WebSocket connected to %s', self.url)
+
+			# Authenticate if credentials provided
+			if self.api_key and self.api_secret:
+				await self._authenticate()
 
 			self.ping_task = asyncio.create_task(self._ping_handler())
 			self.listen_task = asyncio.create_task(self._message_listener())
