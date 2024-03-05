@@ -1,3 +1,6 @@
 """AioPyBit - Asynchronous Python client for the ByBit API."""
 
-__version__ = '0.0.1'
+from .client import ByBitClient
+
+__version__ = '0.1.0'
+__all__ = ['ByBitClient']
