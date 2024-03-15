@@ -38,7 +38,12 @@ class ByBitClient(
 
 		super().__init__(url=self.BASE_URL[mode], api_key=api_key, secret_key=secret_key)
 
-		self.ws = ByBitWebSocketManager(mode=mode, ping_interval=20)
+		self.ws = ByBitWebSocketManager(
+			mode=mode,
+			api_key=api_key,
+			api_secret=secret_key,
+			ping_interval=20,
+		)
 
 	async def close(self):
 		"""Close all connections."""
