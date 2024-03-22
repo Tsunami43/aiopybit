@@ -124,6 +124,14 @@ class ByBitWebSocketClient:
 			logger.debug('Received pong')
 			return
 
+		# Handle subscription confirmation
+		if op == 'subscribe':
+			if data.get('success'):
+				logger.info('Successfully subscribed')
+			else:
+				logger.error('Subscription failed: %s', data)
+			return
+
 		# Handle topic messages
 		if 'topic' in data:
 			topic = data.get('topic')
