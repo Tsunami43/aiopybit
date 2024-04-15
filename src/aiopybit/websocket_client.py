@@ -20,6 +20,7 @@ class ByBitWebSocketClient:
 		api_key: str | None = None,
 		api_secret: str | None = None,
 		ping_interval: int = 20,
+		auto_reconnect: bool = True,
 	):
 		self.url = url
 		self.api_key = api_key
@@ -27,9 +28,12 @@ class ByBitWebSocketClient:
 		self.ws = None
 		self.is_connected = False
 		self.ping_interval = ping_interval
+		self.auto_reconnect = auto_reconnect
 		self.topic_handlers: dict[str, Callable] = {}
 		self.ping_task: asyncio.Task | None = None
 		self.listen_task: asyncio.Task | None = None
+		self.reconnect_task: asyncio.Task | None = None
+		self.is_reconnecting = False
 
 	def _generate_signature(self, expires: int) -> str:
 		"""Generate authentication signature."""
@@ -87,6 +91,8 @@ class ByBitWebSocketClient:
 			except ConnectionClosed:
 				logger.warning('Connection closed during ping')
 				self.is_connected = False
+				if self.auto_reconnect and not self.is_reconnecting:
+					self.reconnect_task = asyncio.create_task(self._reconnect())
 				break
 			except Exception as e:
 				logger.error('Error during ping: %s', e)
@@ -111,6 +117,8 @@ class ByBitWebSocketClient:
 			except ConnectionClosed:
 				logger.warning('Connection closed')
 				self.is_connected = False
+				if self.auto_reconnect and not self.is_reconnecting:
+					self.reconnect_task = asyncio.create_task(self._reconnect())
 				break
 			except Exception as e:
 				logger.error('Error in listener: %s', e)
@@ -145,9 +153,45 @@ class ByBitWebSocketClient:
 				except Exception as e:
 					logger.error('Error in handler: %s', e)
 
+	async def _reconnect(self) -> None:
+		"""Attempt to reconnect to WebSocket."""
+		if self.is_reconnecting:
+			return
+
+		self.is_reconnecting = True
+		logger.info('Attempting to reconnect...')
+
+		try:
+			# Wait before reconnecting
+			await asyncio.sleep(2)
+
+			# Clean up old connection
+			if self.ws:
+				try:
+					await self.ws.close()
+				except Exception:
+					pass
+
+			# Reconnect
+			await self.connect()
+
+			# Restore subscriptions
+			if self.topic_handlers:
+				topics = list(self.topic_handlers.keys())
+				logger.info('Restoring subscriptions: %s', topics)
+				await self.send(op='subscribe', args=topics)
+
+			logger.info('Reconnection successful')
+			self.is_reconnecting = False
+
+		except Exception as e:
+			logger.error('Reconnection failed: %s', e)
+			self.is_reconnecting = False
+
 	async def close(self) -> None:
 		"""Close WebSocket connection."""
 		self.is_connected = False
+		self.is_reconnecting = False
 
 		# Cancel tasks
 		if self.ping_task and not self.ping_task.done():
@@ -161,6 +205,13 @@ class ByBitWebSocketClient:
 			self.listen_task.cancel()
 			try:
 				await self.listen_task
+			except asyncio.CancelledError:
+				pass
+
+		if self.reconnect_task and not self.reconnect_task.done():
+			self.reconnect_task.cancel()
+			try:
+				await self.reconnect_task
 			except asyncio.CancelledError:
 				pass
 
