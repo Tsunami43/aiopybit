@@ -74,3 +74,19 @@ class ByBitPublicStreamsMixin:
 		logger.info('Subscribed to %s', topic)
 
 		return topic
+
+	async def subscribe_to_liquidations(
+		self,
+		category: str,
+		symbol: str,
+		on_message: Callable,
+	) -> str:
+		"""Subscribe to liquidation updates."""
+		websocket = await self.get_websocket('public.' + category)
+		topic = f'liquidation.{symbol}'
+		websocket.topic_handlers[topic] = on_message
+
+		await websocket.send(op='subscribe', args=[topic])
+		logger.info('Subscribed to %s', topic)
+
+		return topic

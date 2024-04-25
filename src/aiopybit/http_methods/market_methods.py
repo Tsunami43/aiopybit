@@ -19,3 +19,14 @@ class MarketMixin:
 		"""Get orderbook data."""
 		payload = f'category={category}&symbol={symbol}&limit={limit}'
 		return await self._request('/v5/market/orderbook', 'GET', payload)
+
+	async def get_klines(
+		self,
+		category: str,
+		symbol: str,
+		interval: str,
+		limit: int = 200,
+	) -> dict:
+		"""Get kline/candlestick data."""
+		payload = f'category={category}&symbol={symbol}&interval={interval}&limit={limit}'
+		return await self._request('/v5/market/kline', 'GET', payload)
