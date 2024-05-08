@@ -1,5 +1,6 @@
 """HTTP client for ByBit REST API."""
 
+import asyncio
 import hashlib
 import hmac
 import logging
@@ -13,11 +14,20 @@ logger = logging.getLogger('aiopybit')
 class ByBitHttpClient:
 	"""Basic HTTP client for ByBit API."""
 
-	def __init__(self, url: str, api_key: str, secret_key: str):
+	def __init__(
+		self,
+		url: str,
+		api_key: str,
+		secret_key: str,
+		max_retries: int = 3,
+		retry_delay: float = 1.0,
+	):
 		self.api_key = api_key
 		self.secret_key = secret_key
 		self.url = url
 		self.recv_window = '5000'
+		self.max_retries = max_retries
+		self.retry_delay = retry_delay
 
 	@property
 	def time_stamp(self):
@@ -46,21 +56,44 @@ class ByBitHttpClient:
 		}
 
 	async def _request(self, endpoint: str, method: str, payload: str = '') -> dict:
-		"""Make HTTP request."""
-		async with aiohttp.ClientSession() as session:
-			if method == 'POST':
-				async with session.post(
-					self.url + endpoint,
-					headers=self._get_headers(payload),
-					data=payload,
-				) as response:
-					response.raise_for_status()
-					return await response.json()
-			else:
-				url = self.url + endpoint
-				if payload:
-					url += '?' + payload
+		"""Make HTTP request with retry mechanism."""
+		last_exception = None
 
-				async with session.get(url, headers=self._get_headers(payload)) as response:
-					response.raise_for_status()
-					return await response.json()
+		for attempt in range(self.max_retries):
+			try:
+				async with aiohttp.ClientSession() as session:
+					if method == 'POST':
+						async with session.post(
+							self.url + endpoint,
+							headers=self._get_headers(payload),
+							data=payload,
+						) as response:
+							response.raise_for_status()
+							return await response.json()
+					else:
+						url = self.url + endpoint
+						if payload:
+							url += '?' + payload
+
+						async with session.get(url, headers=self._get_headers(payload)) as response:
+							response.raise_for_status()
+							return await response.json()
+
+			except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+				last_exception = e
+				if attempt < self.max_retries - 1:
+					delay = self.retry_delay * (2**attempt)
+					logger.warning(
+						'Request failed (attempt %d/%d), retrying in %.2fs: %s',
+						attempt + 1,
+						self.max_retries,
+						delay,
+						str(e),
+					)
+					await asyncio.sleep(delay)
+				else:
+					logger.error('Request failed after %d attempts', self.max_retries)
+
+		if last_exception:
+			raise last_exception
+		raise RuntimeError('Request failed')
