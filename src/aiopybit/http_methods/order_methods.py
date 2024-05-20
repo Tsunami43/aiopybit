@@ -51,3 +51,41 @@ class OrderMixin:
 			payload['orderLinkId'] = order_link_id
 
 		return await self._request('/v5/order/cancel', 'POST', json.dumps(payload))
+
+	async def get_orders(
+		self,
+		category: str,
+		symbol: str = '',
+		limit: int = 20,
+	) -> dict:
+		"""Get order list."""
+		payload = f'category={category}&limit={limit}'
+		if symbol:
+			payload += f'&symbol={symbol}'
+		return await self._request('/v5/order/realtime', 'GET', payload)
+
+	async def amend_order(
+		self,
+		category: str,
+		symbol: str,
+		order_id: str = None,
+		order_link_id: str = None,
+		qty: float = None,
+		price: float = None,
+	) -> dict:
+		"""Modify an existing order."""
+		if not order_id and not order_link_id:
+			raise ValueError('Either order_id or order_link_id required')
+
+		payload = {'category': category, 'symbol': symbol}
+
+		if order_id:
+			payload['orderId'] = order_id
+		if order_link_id:
+			payload['orderLinkId'] = order_link_id
+		if qty is not None:
+			payload['qty'] = str(qty)
+		if price is not None:
+			payload['price'] = str(price)
+
+		return await self._request('/v5/order/amend', 'POST', json.dumps(payload))
