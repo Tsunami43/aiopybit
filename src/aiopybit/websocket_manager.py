@@ -18,6 +18,7 @@ class ByBitWebSocketManager(ByBitPublicStreamsMixin, ByBitPrivateStreamsMixin):
 			'public': {
 				'linear': 'wss://stream.bybit.com/v5/public/linear',
 				'spot': 'wss://stream.bybit.com/v5/public/spot',
+				'option': 'wss://stream.bybit.com/v5/public/option',
 			},
 			'private': 'wss://stream.bybit.com/v5/private',
 		},
@@ -25,8 +26,16 @@ class ByBitWebSocketManager(ByBitPublicStreamsMixin, ByBitPrivateStreamsMixin):
 			'public': {
 				'linear': 'wss://stream-testnet.bybit.com/v5/public/linear',
 				'spot': 'wss://stream-testnet.bybit.com/v5/public/spot',
+				'option': 'wss://stream-testnet.bybit.com/v5/public/option',
 			},
 			'private': 'wss://stream-testnet.bybit.com/v5/private',
+		},
+		'demo': {
+			'public': {
+				'linear': 'wss://stream-demo.bybit.com/v5/public/linear',
+				'spot': 'wss://stream-demo.bybit.com/v5/public/spot',
+			},
+			'private': 'wss://stream-demo.bybit.com/v5/private',
 		},
 	}
 
