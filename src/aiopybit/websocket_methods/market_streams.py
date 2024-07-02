@@ -20,8 +20,12 @@ class ByBitPublicStreamsMixin:
 		topic = f'tickers.{symbol}'
 		websocket.topic_handlers[topic] = on_message
 
-		await websocket.send(op='subscribe', args=[topic])
-		logger.info('Subscribed to %s', topic)
+		try:
+			await websocket.send(op='subscribe', args=[topic])
+			logger.info('Subscribed to %s', topic)
+		except Exception:
+			del websocket.topic_handlers[topic]
+			raise
 
 		return topic
 
@@ -37,8 +41,12 @@ class ByBitPublicStreamsMixin:
 		topic = f'orderbook.{depth}.{symbol}'
 		websocket.topic_handlers[topic] = on_message
 
-		await websocket.send(op='subscribe', args=[topic])
-		logger.info('Subscribed to %s', topic)
+		try:
+			await websocket.send(op='subscribe', args=[topic])
+			logger.info('Subscribed to %s', topic)
+		except Exception:
+			del websocket.topic_handlers[topic]
+			raise
 
 		return topic
 
@@ -53,8 +61,12 @@ class ByBitPublicStreamsMixin:
 		topic = f'publicTrade.{symbol}'
 		websocket.topic_handlers[topic] = on_message
 
-		await websocket.send(op='subscribe', args=[topic])
-		logger.info('Subscribed to %s', topic)
+		try:
+			await websocket.send(op='subscribe', args=[topic])
+			logger.info('Subscribed to %s', topic)
+		except Exception:
+			del websocket.topic_handlers[topic]
+			raise
 
 		return topic
 
@@ -70,8 +82,12 @@ class ByBitPublicStreamsMixin:
 		topic = f'kline.{interval}.{symbol}'
 		websocket.topic_handlers[topic] = on_message
 
-		await websocket.send(op='subscribe', args=[topic])
-		logger.info('Subscribed to %s', topic)
+		try:
+			await websocket.send(op='subscribe', args=[topic])
+			logger.info('Subscribed to %s', topic)
+		except Exception:
+			del websocket.topic_handlers[topic]
+			raise
 
 		return topic
 
@@ -86,7 +102,11 @@ class ByBitPublicStreamsMixin:
 		topic = f'liquidation.{symbol}'
 		websocket.topic_handlers[topic] = on_message
 
-		await websocket.send(op='subscribe', args=[topic])
-		logger.info('Subscribed to %s', topic)
+		try:
+			await websocket.send(op='subscribe', args=[topic])
+			logger.info('Subscribed to %s', topic)
+		except Exception:
+			del websocket.topic_handlers[topic]
+			raise
 
 		return topic

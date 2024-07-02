@@ -15,8 +15,12 @@ class ByBitPrivateStreamsMixin:
 		topic = 'order'
 		websocket.topic_handlers[topic] = on_message
 
-		await websocket.send(op='subscribe', args=[topic])
-		logger.info('Subscribed to %s', topic)
+		try:
+			await websocket.send(op='subscribe', args=[topic])
+			logger.info('Subscribed to %s', topic)
+		except Exception:
+			del websocket.topic_handlers[topic]
+			raise
 
 		return topic
 
@@ -26,8 +30,12 @@ class ByBitPrivateStreamsMixin:
 		topic = 'position'
 		websocket.topic_handlers[topic] = on_message
 
-		await websocket.send(op='subscribe', args=[topic])
-		logger.info('Subscribed to %s', topic)
+		try:
+			await websocket.send(op='subscribe', args=[topic])
+			logger.info('Subscribed to %s', topic)
+		except Exception:
+			del websocket.topic_handlers[topic]
+			raise
 
 		return topic
 
@@ -37,8 +45,12 @@ class ByBitPrivateStreamsMixin:
 		topic = 'execution'
 		websocket.topic_handlers[topic] = on_message
 
-		await websocket.send(op='subscribe', args=[topic])
-		logger.info('Subscribed to %s', topic)
+		try:
+			await websocket.send(op='subscribe', args=[topic])
+			logger.info('Subscribed to %s', topic)
+		except Exception:
+			del websocket.topic_handlers[topic]
+			raise
 
 		return topic
 
@@ -48,7 +60,11 @@ class ByBitPrivateStreamsMixin:
 		topic = 'wallet'
 		websocket.topic_handlers[topic] = on_message
 
-		await websocket.send(op='subscribe', args=[topic])
-		logger.info('Subscribed to %s', topic)
+		try:
+			await websocket.send(op='subscribe', args=[topic])
+			logger.info('Subscribed to %s', topic)
+		except Exception:
+			del websocket.topic_handlers[topic]
+			raise
 
 		return topic
