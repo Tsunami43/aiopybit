@@ -220,3 +220,17 @@ class ByBitWebSocketClient:
 			await self.ws.close()
 
 		logger.info('WebSocket closed')
+
+	async def unsubscribe(self, topic: str) -> bool:
+		"""Unsubscribe from a topic."""
+		if topic not in self.topic_handlers:
+			return False
+
+		try:
+			await self.send(op='unsubscribe', args=[topic])
+			del self.topic_handlers[topic]
+			logger.info('Unsubscribed from %s', topic)
+			return True
+		except Exception as e:
+			logger.error('Failed to unsubscribe from %s: %s', topic, e)
+			return False
