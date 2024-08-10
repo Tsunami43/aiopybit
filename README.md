@@ -23,8 +23,8 @@ AioPyBit is a modern and convenient Python client for the [ByBit](https://www.by
 ## 📋 Requirements
 
 - Python 3.10+
-- `websockets` >= 10.0
-- `aiohttp` >= 3.8.0
+- `websockets` >= 15.0
+- `aiohttp` >= 3.12.0
 - `asyncio` (built-in)
 
 ## 🛠️ Installation
