@@ -31,8 +31,14 @@ AioPyBit is a modern and convenient Python client for the [ByBit](https://www.by
 
 ```bash
 pip install aiopybit
+```
 
-# The module is ready to use - no separate installation needed
+Or install from source:
+
+```bash
+git clone https://github.com/Tsunami43/aiopybit.git
+cd aiopybit
+pip install -e .
 ```
 
 ## 🏗️ Architecture
