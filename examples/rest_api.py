@@ -1,54 +1,49 @@
+"""Example: Using ByBit REST API for trading operations."""
+
+import asyncio
+
 from aiopybit import ByBitClient
 
+# Configuration
 API_KEY = ''
 API_SECRET = ''
 MODE = 'demo'
 
-client = ByBitClient(API_KEY, API_SECRET, MODE)
-
 
 async def main():
-	# get account info
-	account_info = await client.get_account_info()
-	print(account_info)
+	"""Demonstrate various REST API operations."""
+	client = ByBitClient(API_KEY, API_SECRET, MODE)
 
-	# get instruments
-	ticker = await client.get_instruments_info('linear', 'BTCUSDT')
-	print(ticker)
+	try:
+		# Get account balance
+		print('\n📊 Getting account info...')
+		balance = await client.get_wallet_balance('UNIFIED')
+		print(f'Balance: {balance}')
 
-	# get ticker
-	ticker = await client.get_ticker_price('linear', 'BTCUSDT')
-	print(ticker)
+		# Get market data
+		print('\n📈 Getting ticker data...')
+		ticker = await client.get_tickers('linear', 'BTCUSDT')
+		print(f'Ticker: {ticker}')
 
-	# get orders
-	orders = await client.get_orders('linear', 'BTCUSDT')
-	print(orders)
+		# Get orderbook
+		print('\n📚 Getting orderbook...')
+		orderbook = await client.get_orderbook('linear', 'BTCUSDT', limit=10)
+		print(f'Orderbook: {orderbook}')
 
-	# set leverage
-	account_info = await client.set_leverage('linear', 'BTCUSDT', 2)
-	print(account_info)
+		# Get positions
+		print('\n💼 Getting positions...')
+		positions = await client.get_positions('linear', 'BTCUSDT')
+		print(f'Positions: {positions}')
 
-	# create order
-	order = await client.create_order(
-		'linear', 'BTCUSDT', 'Buy', 'Market', qty=5, order_link_id='1'
-	)
-	print(order)
+		# Set leverage
+		print('\n⚙️ Setting leverage...')
+		result = await client.set_leverage('linear', 'BTCUSDT', 10)
+		print(f'Leverage set: {result}')
 
-	# modify order
-	order = await client.amend_order(
-		'linear',
-		'BTCUSDT',
-		stop_loss=10,
-		order_link_id='1',
-	)
-	print(order)
-
-	# cancel order
-	order = await client.cancel_order('linear', 'BTCUSDT', '1')
-	print(order)
+	finally:
+		await client.close()
+		print('\n✅ Done!')
 
 
 if __name__ == '__main__':
-	import asyncio
-
 	asyncio.run(main())
