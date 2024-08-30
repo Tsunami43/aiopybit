@@ -238,6 +238,16 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 Contributions are welcome! Please feel free to submit pull requests or open issues for bugs and feature requests.
 
+### Development
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Run tests and linting
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
 ## ⚠️ Disclaimer
 
 This software is for educational and development purposes. Use at your own risk. The authors are not responsible for any financial losses incurred through the use of this software.
