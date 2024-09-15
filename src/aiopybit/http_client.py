@@ -29,14 +29,19 @@ class ByBitHttpClient:
 		self.max_retries = max_retries
 		self.retry_delay = retry_delay
 
-	@property
-	def time_stamp(self):
-		"""Get current timestamp."""
+	@staticmethod
+	def _timestamp() -> str:
+		"""Get current timestamp in milliseconds."""
 		return str(int(time.time() * 1000))
 
-	def _generate_signature(self, payload: str) -> str:
-		"""Generate request signature."""
-		param_str = self.time_stamp + self.api_key + self.recv_window + payload
+	def _generate_signature(self, timestamp: str, payload: str) -> str:
+		"""Generate request signature for the given timestamp.
+
+		The same timestamp must be used both for the signature and for the
+		``X-BAPI-TIMESTAMP`` header, otherwise ByBit rejects the request with
+		an invalid-signature error.
+		"""
+		param_str = timestamp + self.api_key + self.recv_window + payload
 		hash_obj = hmac.new(
 			bytes(self.secret_key, 'utf-8'),
 			param_str.encode('utf-8'),
@@ -45,12 +50,13 @@ class ByBitHttpClient:
 		return hash_obj.hexdigest()
 
 	def _get_headers(self, payload: str) -> dict:
-		"""Build request headers."""
+		"""Build signed request headers using a single timestamp."""
+		timestamp = self._timestamp()
 		return {
 			'X-BAPI-API-KEY': self.api_key,
-			'X-BAPI-SIGN': self._generate_signature(payload),
+			'X-BAPI-SIGN': self._generate_signature(timestamp, payload),
 			'X-BAPI-SIGN-TYPE': '2',
-			'X-BAPI-TIMESTAMP': self.time_stamp,
+			'X-BAPI-TIMESTAMP': timestamp,
 			'X-BAPI-RECV-WINDOW': self.recv_window,
 			'Content-Type': 'application/json',
 		}
