@@ -8,6 +8,8 @@ import time
 
 import aiohttp
 
+from aiopybit.exceptions import ByBitAPIError, ByBitHTTPError
+
 logger = logging.getLogger('aiopybit')
 
 
@@ -61,9 +63,26 @@ class ByBitHttpClient:
 			'Content-Type': 'application/json',
 		}
 
+	@staticmethod
+	def _check_response(data: dict) -> dict:
+		"""Validate a decoded ByBit response and raise on a non-zero retCode."""
+		ret_code = data.get('retCode')
+		if ret_code not in (0, None):
+			raise ByBitAPIError(
+				ret_code=ret_code,
+				ret_msg=data.get('retMsg', ''),
+				response=data,
+			)
+		return data
+
 	async def _request(self, endpoint: str, method: str, payload: str = '') -> dict:
-		"""Make HTTP request with retry mechanism."""
-		last_exception = None
+		"""Make an HTTP request with retry on transient transport errors.
+
+		Retries with exponential backoff on connection/timeout errors. HTTP
+		status errors raise :class:`ByBitHTTPError` immediately (no retry), and
+		a non-zero ``retCode`` in the body raises :class:`ByBitAPIError`.
+		"""
+		last_exception: Exception | None = None
 
 		for attempt in range(self.max_retries):
 			try:
@@ -74,16 +93,22 @@ class ByBitHttpClient:
 							headers=self._get_headers(payload),
 							data=payload,
 						) as response:
-							response.raise_for_status()
-							return await response.json()
+							status = response.status
+							data = await response.json()
 					else:
 						url = self.url + endpoint
 						if payload:
 							url += '?' + payload
+						async with session.get(
+							url, headers=self._get_headers(payload)
+						) as response:
+							status = response.status
+							data = await response.json()
 
-						async with session.get(url, headers=self._get_headers(payload)) as response:
-							response.raise_for_status()
-							return await response.json()
+				if status >= 400:
+					raise ByBitHTTPError(status, str(data))
+
+				return self._check_response(data)
 
 			except (aiohttp.ClientError, asyncio.TimeoutError) as e:
 				last_exception = e

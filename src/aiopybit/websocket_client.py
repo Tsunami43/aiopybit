@@ -8,6 +8,8 @@ from typing import Any, Callable
 import websockets
 from websockets.exceptions import ConnectionClosed
 
+from aiopybit.exceptions import ByBitAuthError
+
 logger = logging.getLogger('aiopybit')
 
 
@@ -38,7 +40,7 @@ class ByBitWebSocketClient:
 	def _generate_signature(self, expires: int) -> str:
 		"""Generate authentication signature."""
 		if not self.api_secret:
-			raise ValueError('API secret required')
+			raise ByBitAuthError('API secret required')
 
 		return hmac.new(
 			bytes(self.api_secret, 'utf-8'),
@@ -49,7 +51,7 @@ class ByBitWebSocketClient:
 	async def _authenticate(self) -> None:
 		"""Authenticate for private channels."""
 		if not self.api_key or not self.api_secret:
-			raise ValueError('API credentials required')
+			raise ByBitAuthError('API credentials required')
 
 		expires = int((time.time() + 1) * 1000)
 		signature = self._generate_signature(expires)
@@ -61,7 +63,7 @@ class ByBitWebSocketClient:
 		auth_result = json.loads(response)
 
 		if not auth_result.get('success'):
-			raise ConnectionError('Authentication failed')
+			raise ByBitAuthError(f'Authentication failed: {auth_result}')
 
 		logger.info('Authentication successful')
 
