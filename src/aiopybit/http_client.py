@@ -23,6 +23,7 @@ class ByBitHttpClient:
 		secret_key: str,
 		max_retries: int = 3,
 		retry_delay: float = 1.0,
+		timeout: float = 10.0,
 	):
 		self.api_key = api_key
 		self.secret_key = secret_key
@@ -30,6 +31,25 @@ class ByBitHttpClient:
 		self.recv_window = '5000'
 		self.max_retries = max_retries
 		self.retry_delay = retry_delay
+		self.timeout = aiohttp.ClientTimeout(total=timeout)
+		self._session: aiohttp.ClientSession | None = None
+
+	def _get_session(self) -> aiohttp.ClientSession:
+		"""Return the shared session, creating it lazily on first use.
+
+		The session is created lazily so that it is bound to the running event
+		loop rather than the loop that happened to be active at construction
+		time.
+		"""
+		if self._session is None or self._session.closed:
+			self._session = aiohttp.ClientSession(timeout=self.timeout)
+		return self._session
+
+	async def close(self) -> None:
+		"""Close the underlying HTTP session, if it is open."""
+		if self._session is not None and not self._session.closed:
+			await self._session.close()
+			self._session = None
 
 	@staticmethod
 	def _timestamp() -> str:
@@ -83,27 +103,27 @@ class ByBitHttpClient:
 		a non-zero ``retCode`` in the body raises :class:`ByBitAPIError`.
 		"""
 		last_exception: Exception | None = None
+		session = self._get_session()
 
 		for attempt in range(self.max_retries):
 			try:
-				async with aiohttp.ClientSession() as session:
-					if method == 'POST':
-						async with session.post(
-							self.url + endpoint,
-							headers=self._get_headers(payload),
-							data=payload,
-						) as response:
-							status = response.status
-							data = await response.json()
-					else:
-						url = self.url + endpoint
-						if payload:
-							url += '?' + payload
-						async with session.get(
-							url, headers=self._get_headers(payload)
-						) as response:
-							status = response.status
-							data = await response.json()
+				if method == 'POST':
+					async with session.post(
+						self.url + endpoint,
+						headers=self._get_headers(payload),
+						data=payload,
+					) as response:
+						status = response.status
+						data = await response.json()
+				else:
+					url = self.url + endpoint
+					if payload:
+						url += '?' + payload
+					async with session.get(
+						url, headers=self._get_headers(payload)
+					) as response:
+						status = response.status
+						data = await response.json()
 
 				if status >= 400:
 					raise ByBitHTTPError(status, str(data))
