@@ -45,6 +45,13 @@ class ByBitClient(
 			ping_interval=20,
 		)
 
+	async def __aenter__(self) -> 'ByBitClient':
+		return self
+
+	async def __aexit__(self, exc_type, exc, tb) -> None:
+		await self.close()
+
 	async def close(self):
-		"""Close all connections."""
+		"""Close all HTTP and WebSocket connections."""
 		await self.ws.close_all()
+		await super().close()
