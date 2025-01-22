@@ -17,8 +17,20 @@ class OrderMixin:
 		order_type: str,
 		qty: float,
 		price: float = None,
+		time_in_force: str = None,
+		order_link_id: str = None,
+		reduce_only: bool = None,
+		**extra: object,
 	) -> dict:
-		"""Create a new order."""
+		"""Create a new order.
+
+		Args:
+			time_in_force: One of ``GTC``, ``IOC``, ``FOK``, ``PostOnly``.
+			order_link_id: Optional client-supplied order id.
+			reduce_only: Whether the order may only reduce a position.
+			**extra: Any additional ByBit order parameter (e.g. ``takeProfit``,
+				``stopLoss``, ``triggerPrice``) passed through verbatim.
+		"""
 		payload = {
 			'category': category,
 			'symbol': symbol,
@@ -29,6 +41,13 @@ class OrderMixin:
 
 		if price is not None:
 			payload['price'] = str(price)
+		if time_in_force is not None:
+			payload['timeInForce'] = time_in_force
+		if order_link_id is not None:
+			payload['orderLinkId'] = order_link_id
+		if reduce_only is not None:
+			payload['reduceOnly'] = reduce_only
+		payload.update(extra)
 
 		return await self._request('/v5/order/create', 'POST', json.dumps(payload))
 
@@ -89,3 +108,33 @@ class OrderMixin:
 			payload['price'] = str(price)
 
 		return await self._request('/v5/order/amend', 'POST', json.dumps(payload))
+
+	async def cancel_all_orders(
+		self,
+		category: str,
+		symbol: str = '',
+		settle_coin: str = '',
+	) -> dict:
+		"""Cancel all open orders.
+
+		Provide ``symbol`` or ``settle_coin`` to scope the cancellation for
+		derivatives categories, as required by ByBit.
+		"""
+		payload = {'category': category}
+		if symbol:
+			payload['symbol'] = symbol
+		if settle_coin:
+			payload['settleCoin'] = settle_coin
+		return await self._request('/v5/order/cancel-all', 'POST', json.dumps(payload))
+
+	async def get_order_history(
+		self,
+		category: str,
+		symbol: str = '',
+		limit: int = 50,
+	) -> dict:
+		"""Get historical (closed/cancelled/filled) orders."""
+		payload = f'category={category}&limit={limit}'
+		if symbol:
+			payload += f'&symbol={symbol}'
+		return await self._request('/v5/order/history', 'GET', payload)
