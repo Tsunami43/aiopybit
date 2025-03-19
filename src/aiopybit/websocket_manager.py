@@ -17,6 +17,7 @@ class ByBitWebSocketManager(ByBitPublicStreamsMixin, ByBitPrivateStreamsMixin):
 		'mainnet': {
 			'public': {
 				'linear': 'wss://stream.bybit.com/v5/public/linear',
+				'inverse': 'wss://stream.bybit.com/v5/public/inverse',
 				'spot': 'wss://stream.bybit.com/v5/public/spot',
 				'option': 'wss://stream.bybit.com/v5/public/option',
 			},
@@ -25,6 +26,7 @@ class ByBitWebSocketManager(ByBitPublicStreamsMixin, ByBitPrivateStreamsMixin):
 		'testnet': {
 			'public': {
 				'linear': 'wss://stream-testnet.bybit.com/v5/public/linear',
+				'inverse': 'wss://stream-testnet.bybit.com/v5/public/inverse',
 				'spot': 'wss://stream-testnet.bybit.com/v5/public/spot',
 				'option': 'wss://stream-testnet.bybit.com/v5/public/option',
 			},
@@ -76,7 +78,19 @@ class ByBitWebSocketManager(ByBitPublicStreamsMixin, ByBitPrivateStreamsMixin):
 		self.connections[channel_type] = websocket
 		return websocket
 
+	async def unsubscribe(self, topic: str) -> bool:
+		"""Unsubscribe from ``topic`` across all managed connections.
+
+		Returns ``True`` if a connection was subscribed to the topic and the
+		unsubscribe request was sent, ``False`` otherwise.
+		"""
+		for websocket in self.connections.values():
+			if topic in websocket.topic_handlers:
+				return await websocket.unsubscribe(topic)
+		return False
+
 	async def close_all(self):
 		"""Close all WebSocket connections."""
 		for websocket in self.connections.values():
 			await websocket.close()
+		self.connections.clear()

@@ -68,3 +68,18 @@ class ByBitPrivateStreamsMixin:
 			raise
 
 		return topic
+
+	async def subscribe_to_greeks(self, on_message: Callable) -> str:
+		"""Subscribe to option portfolio greeks updates."""
+		websocket = await self.get_websocket('private')
+		topic = 'greeks'
+		websocket.topic_handlers[topic] = on_message
+
+		try:
+			await websocket.send(op='subscribe', args=[topic])
+			logger.info('Subscribed to %s', topic)
+		except Exception:
+			del websocket.topic_handlers[topic]
+			raise
+
+		return topic
