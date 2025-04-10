@@ -1,7 +1,13 @@
 """Public market data stream subscriptions."""
 
 import logging
-from collections.abc import Callable
+
+from aiopybit.protocols import (
+	ByBitCategories,
+	KlineInterval,
+	OrderbookDepth,
+	StreamHandler,
+)
 
 logger = logging.getLogger('aiopybit')
 
@@ -11,9 +17,9 @@ class ByBitPublicStreamsMixin:
 
 	async def subscribe_to_ticker(
 		self,
-		category: str,
+		category: ByBitCategories,
 		symbol: str,
-		on_message: Callable,
+		on_message: StreamHandler,
 	) -> str:
 		"""Subscribe to ticker updates."""
 		websocket = await self.get_websocket('public.' + category)
@@ -31,10 +37,10 @@ class ByBitPublicStreamsMixin:
 
 	async def subscribe_to_orderbook(
 		self,
-		category: str,
+		category: ByBitCategories,
 		symbol: str,
-		on_message: Callable,
-		depth: int = 50,
+		on_message: StreamHandler,
+		depth: OrderbookDepth = 50,
 	) -> str:
 		"""Subscribe to orderbook updates."""
 		websocket = await self.get_websocket('public.' + category)
@@ -52,9 +58,9 @@ class ByBitPublicStreamsMixin:
 
 	async def subscribe_to_public_trades(
 		self,
-		category: str,
+		category: ByBitCategories,
 		symbol: str,
-		on_message: Callable,
+		on_message: StreamHandler,
 	) -> str:
 		"""Subscribe to public trades."""
 		websocket = await self.get_websocket('public.' + category)
@@ -72,10 +78,10 @@ class ByBitPublicStreamsMixin:
 
 	async def subscribe_to_kline(
 		self,
-		category: str,
+		category: ByBitCategories,
 		symbol: str,
-		interval: str,
-		on_message: Callable,
+		interval: KlineInterval,
+		on_message: StreamHandler,
 	) -> str:
 		"""Subscribe to kline/candlestick updates."""
 		websocket = await self.get_websocket('public.' + category)
@@ -93,9 +99,9 @@ class ByBitPublicStreamsMixin:
 
 	async def subscribe_to_liquidations(
 		self,
-		category: str,
+		category: ByBitCategories,
 		symbol: str,
-		on_message: Callable,
+		on_message: StreamHandler,
 	) -> str:
 		"""Subscribe to liquidation updates."""
 		websocket = await self.get_websocket('public.' + category)

@@ -1,7 +1,8 @@
 """Private account data stream subscriptions."""
 
 import logging
-from collections.abc import Callable
+
+from aiopybit.protocols import StreamHandler
 
 logger = logging.getLogger('aiopybit')
 
@@ -9,7 +10,7 @@ logger = logging.getLogger('aiopybit')
 class ByBitPrivateStreamsMixin:
 	"""Mixin for private account data subscriptions."""
 
-	async def subscribe_to_order(self, on_message: Callable) -> str:
+	async def subscribe_to_order(self, on_message: StreamHandler) -> str:
 		"""Subscribe to order updates."""
 		websocket = await self.get_websocket('private')
 		topic = 'order'
@@ -24,7 +25,7 @@ class ByBitPrivateStreamsMixin:
 
 		return topic
 
-	async def subscribe_to_position(self, on_message: Callable) -> str:
+	async def subscribe_to_position(self, on_message: StreamHandler) -> str:
 		"""Subscribe to position updates."""
 		websocket = await self.get_websocket('private')
 		topic = 'position'
@@ -39,7 +40,7 @@ class ByBitPrivateStreamsMixin:
 
 		return topic
 
-	async def subscribe_to_execution(self, on_message: Callable) -> str:
+	async def subscribe_to_execution(self, on_message: StreamHandler) -> str:
 		"""Subscribe to execution updates."""
 		websocket = await self.get_websocket('private')
 		topic = 'execution'
@@ -54,7 +55,7 @@ class ByBitPrivateStreamsMixin:
 
 		return topic
 
-	async def subscribe_to_wallet(self, on_message: Callable) -> str:
+	async def subscribe_to_wallet(self, on_message: StreamHandler) -> str:
 		"""Subscribe to wallet balance updates."""
 		websocket = await self.get_websocket('private')
 		topic = 'wallet'
@@ -69,7 +70,7 @@ class ByBitPrivateStreamsMixin:
 
 		return topic
 
-	async def subscribe_to_greeks(self, on_message: Callable) -> str:
+	async def subscribe_to_greeks(self, on_message: StreamHandler) -> str:
 		"""Subscribe to option portfolio greeks updates."""
 		websocket = await self.get_websocket('private')
 		topic = 'greeks'
