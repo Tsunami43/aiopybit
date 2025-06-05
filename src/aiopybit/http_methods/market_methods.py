@@ -34,7 +34,9 @@ class MarketMixin:
 		end: int | None = None,
 	) -> dict:
 		"""Get kline/candlestick data."""
-		payload = f'category={category}&symbol={symbol}&interval={interval}&limit={limit}'
+		payload = (
+			f'category={category}&symbol={symbol}&interval={interval}&limit={limit}'
+		)
 		if start is not None:
 			payload += f'&start={start}'
 		if end is not None:

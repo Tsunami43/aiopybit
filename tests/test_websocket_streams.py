@@ -47,7 +47,9 @@ async def test_ticker_topic(manager):
 
 
 async def test_orderbook_topic_includes_depth(manager):
-	topic = await manager.subscribe_to_orderbook('linear', 'BTCUSDT', lambda _: None, depth=50)
+	topic = await manager.subscribe_to_orderbook(
+		'linear', 'BTCUSDT', lambda _: None, depth=50
+	)
 	assert topic == 'orderbook.50.BTCUSDT'
 
 

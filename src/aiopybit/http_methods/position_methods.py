@@ -24,7 +24,9 @@ class PositionMixin:
 			'buyLeverage': str(leverage),
 			'sellLeverage': str(leverage),
 		}
-		return await self._request('/v5/position/set-leverage', 'POST', json.dumps(payload))
+		return await self._request(
+			'/v5/position/set-leverage', 'POST', json.dumps(payload)
+		)
 
 	async def set_trading_stop(
 		self,
