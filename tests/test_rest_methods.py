@@ -52,8 +52,14 @@ async def test_instruments_info_added(client):
 
 async def test_create_order_serialises_extra_params(client):
 	await client.create_order(
-		'linear', 'BTCUSDT', 'Buy', 'Limit', 0.1, price=100,
-		time_in_force='PostOnly', takeProfit='120',
+		'linear',
+		'BTCUSDT',
+		'Buy',
+		'Limit',
+		0.1,
+		price=100,
+		time_in_force='PostOnly',
+		takeProfit='120',
 	)
 	endpoint, method, payload = client.last
 	assert endpoint == '/v5/order/create'

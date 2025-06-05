@@ -30,7 +30,9 @@ class ByBitAPIError(ByBitError):
 		response: The full decoded JSON response, for further inspection.
 	"""
 
-	def __init__(self, ret_code: int, ret_msg: str, response: dict | None = None) -> None:
+	def __init__(
+		self, ret_code: int, ret_msg: str, response: dict | None = None
+	) -> None:
 		self.ret_code = ret_code
 		self.ret_msg = ret_msg
 		self.response = response or {}

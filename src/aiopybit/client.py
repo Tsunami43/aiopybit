@@ -36,7 +36,9 @@ class ByBitClient(
 	):
 		self.mode = mode
 
-		super().__init__(url=self.BASE_URL[mode], api_key=api_key, secret_key=secret_key)
+		super().__init__(
+			url=self.BASE_URL[mode], api_key=api_key, secret_key=secret_key
+		)
 
 		self.ws = ByBitWebSocketManager(
 			mode=mode,
