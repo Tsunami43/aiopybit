@@ -1,0 +1,44 @@
+[project]
+name = "aiopybit"
+version = "0.1.0"
+description = "Asynchronous Python client for the ByBit API"
+readme = "README.md"
+requires-python = ">=3.10, <4.0"
+dependencies = [
+    "aiohttp>=3.12.15",
+    "websockets>=15.0.1",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.12.9",
+]
+
+[tool.ruff]
+line-length = 88  # same as black; you can increase to 88 if you prefer less strict wrapping
+
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "C"]  # enable common linter rules, including flake8, isort, bugbear, etc.
+
+ignore = [
+    "D100",  # missing docstring in public module
+    "D104",  # missing docstring in __init__.py
+    "E501",  # line too long (ignored if you don't want to enforce line length strictly)
+    "B008",
+    "E101"
+]
+
+fixable = ["ALL"]       # allow automatic fixing of all rules
+unfixable = ["B"]        # do not auto-fix potential bugs (bugbear)
+
+exclude = ["build", "dist", ".venv", "migrations", "tests/fixtures"]  # exclude these directories from linting
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"  # docstring style to follow (other options: "numpy", "pep257")
+
+
+[tool.ruff.format]
+quote-style = "single"         # use single quotes for strings
+indent-style = "tab"           # use tabs instead of spaces for indentation
+docstring-code-format = true   # format code blocks inside docstrings
