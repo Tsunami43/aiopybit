@@ -1,8 +1,32 @@
 [project]
 name = "aiopybit"
-version = "0.1.0"
+version = "0.1.1"
 description = "Asynchronous Python client for the ByBit API"
 readme = "README.md"
+repository = "https://github.com/Tsunami43/aiopybit.git"
+homepage = "https://github.com/Tsunami43/aiopybit"
+keywords = [
+    "bybit",
+    "websocket",
+    "crypto",
+    "cryptocurrency",
+    "trading",
+    "exchange",
+    "async",
+    "aiohttp",
+    "python",
+    "api",
+    "websockets",
+    "market-data",
+    "orderbook",
+    "ticker",
+    "trades",
+    "bot"
+]
+license = "MIT"
+authors = [
+    {name = "Tsunami43",email = "n3m0_22@mail.ru"}
+]
 requires-python = ">=3.10, <4.0"
 dependencies = [
     "aiohttp>=3.12.15",
