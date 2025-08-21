@@ -1,10 +1,10 @@
-# AioPyBit - ByBit WebSocket Client
+# AioPyBit - Python Client for ByBit API (v5)
 
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![ByBit API](https://img.shields.io/badge/ByBit%20API-v5-green.svg)](https://bybit-exchange.github.io/docs/v5/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-A modern, comprehensive Python WebSocket client for [ByBit](https://www.bybit.com/invite?ref=D0B6GN) cryptocurrency exchange API v5. This module provides real-time access to market data and private account information through efficient WebSocket connections with advanced connection management.
+AioPyBit is a modern and convenient Python client for the [ByBit](https://www.bybit.com/invite?ref=D0B6GN) cryptocurrency exchange API (v5). The module provides real-time access to market data and private account information via efficient WebSocket connections, and also supports HTTP requests with advanced error handling and auto-retry mechanisms.
 
 ## 🚀 Features
 
@@ -218,7 +218,7 @@ Example log output:
 ## 🔗 Related Links
 
 - [ByBit Official Website](https://www.bybit.com/)
-- [ByBit API Documentation](https://bybit-exchange.github.io/docs/v5/)
+- [ByBit API Documentation](https://bybit-exchange.github.io/docs/v5/intro)
 - [ByBit WebSocket Documentation](https://bybit-exchange.github.io/docs/v5/ws/connect)
 - [ByBit Testnet](https://testnet.bybit.com/)
 - [ByBit API Management](https://www.bybit.com/app/user/api-management)
