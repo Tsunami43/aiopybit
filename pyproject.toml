@@ -1,10 +1,8 @@
 [project]
 name = "aiopybit"
-version = "0.1.1"
+version = "0.1.2"
 description = "Asynchronous Python client for the ByBit API"
 readme = "README.md"
-repository = "https://github.com/Tsunami43/aiopybit.git"
-homepage = "https://github.com/Tsunami43/aiopybit"
 keywords = [
     "bybit",
     "websocket",
@@ -32,6 +30,10 @@ dependencies = [
     "aiohttp>=3.12.15",
     "websockets>=15.0.1",
 ]
+
+[project.urls]
+Repository = "https://github.com/Tsunami43/aiopybit.git"
+Homepage = "https://github.com/Tsunami43/aiopybit"
 
 [dependency-groups]
 dev = [
