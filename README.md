@@ -105,6 +105,61 @@ if __name__ == '__main__':
 
 The `examples/` directory contains comprehensive usage examples:
 
+- [`stream_tickers.py`](examples/stream_tickers.py) — stream public ticker data
+- [`stream_private.py`](examples/stream_private.py) — stream private order/position/wallet updates
+- [`rest_api.py`](examples/rest_api.py) — REST trading and market-data calls
+- [`error_handling.py`](examples/error_handling.py) — catching API and HTTP errors
+
+### Recommended: Async Context Manager
+
+`ByBitClient` is an async context manager. Using `async with` guarantees that
+the HTTP session and every WebSocket connection are closed on exit:
+
+```python
+import asyncio
+from aiopybit import ByBitClient
+
+
+async def main():
+	async with ByBitClient(API_KEY, API_SECRET, 'mainnet') as client:
+		ticker = await client.get_tickers('linear', 'BTCUSDT')
+		print(ticker['result']['list'][0]['lastPrice'])
+
+
+if __name__ == '__main__':
+	asyncio.run(main())
+```
+
+## ⚠️ Error Handling
+
+Every error raised by the library derives from `ByBitError`, so you can catch
+that single base class or handle specific failures:
+
+```python
+from aiopybit import ByBitAPIError, ByBitHTTPError, ByBitError
+
+try:
+	await client.create_order('linear', 'BTCUSDT', 'Buy', 'Market', 1)
+except ByBitAPIError as exc:
+	# The request reached ByBit but was rejected (non-zero retCode).
+	print(exc.ret_code, exc.ret_msg)
+except ByBitHTTPError as exc:
+	# Transport-level failure (non-2xx HTTP status).
+	print(exc.status)
+except ByBitError:
+	# Any other AioPyBit error.
+	...
+```
+
+| Exception | Raised when |
+|-----------|-------------|
+| `ByBitError` | Base class for all library errors |
+| `ByBitHTTPError` | The response has a non-successful HTTP status code |
+| `ByBitAPIError` | ByBit returns a non-zero `retCode` (carries `ret_code`, `ret_msg`) |
+| `ByBitAuthError` | WebSocket authentication fails or credentials are missing |
+
+Requests are retried automatically with exponential backoff on transient
+connection/timeout errors before the error is finally raised.
 
 ## 🔐 Authentication
 
@@ -132,6 +187,7 @@ For private streams, you need ByBit API credentials:
 | Category | Description | Supported Streams |
 |----------|-------------|-------------------|
 | `linear` | USDT/USDC perpetual contracts | All public streams |
+| `inverse` | Inverse (coin-margined) contracts | All public streams |
 | `spot` | Spot trading pairs | Tickers, orderbook, trades |
 | `option` | Options contracts | All public + greeks |
 
@@ -144,6 +200,40 @@ The client includes robust connection management features:
 - **Resource Cleanup**: Proper cleanup of tasks and connections
 
 ## 📖 API Reference
+
+### REST Methods (`ByBitClient`)
+
+#### Market Data
+- `get_server_time()`
+- `get_tickers(category, symbol='')`
+- `get_orderbook(category, symbol, limit=25)`
+- `get_klines(category, symbol, interval, limit=200, start=None, end=None)`
+- `get_instruments_info(category, symbol='', limit=500)`
+- `get_recent_trades(category, symbol, limit=60)`
+- `get_funding_rate_history(category, symbol, limit=200, start=None, end=None)`
+- `get_open_interest(category, symbol, interval_time, limit=50)`
+
+#### Orders
+- `create_order(category, symbol, side, order_type, qty, price=None, time_in_force=None, order_link_id=None, reduce_only=None, **extra)`
+- `amend_order(category, symbol, order_id=None, order_link_id=None, qty=None, price=None)`
+- `cancel_order(category, symbol, order_id=None, order_link_id=None)`
+- `cancel_all_orders(category, symbol='', settle_coin='')`
+- `get_orders(category, symbol='', limit=20)`
+- `get_order_history(category, symbol='', limit=50)`
+
+#### Positions
+- `get_positions(category, symbol='')`
+- `set_leverage(category, symbol, leverage)`
+- `set_trading_stop(category, symbol, take_profit=None, stop_loss=None, trailing_stop=None, position_idx=0, **extra)`
+- `switch_margin_mode(category, symbol, trade_mode, leverage)`
+- `switch_position_mode(category, mode, symbol='', coin='')`
+- `get_closed_pnl(category, symbol='', limit=50)`
+
+#### Account
+- `get_wallet_balance(account_type, coin='')`
+- `get_account_info()`
+- `get_fee_rates(category, symbol='')`
+- `get_transaction_log(account_type='UNIFIED', category='', currency='', limit=50)`
 
 ### ByBitWebSocketManager
 
@@ -159,6 +249,7 @@ High-level WebSocket manager for multiple connections and subscriptions.
 
 #### Connection Management Methods
 - `get_websocket(channel_type)`: Get or create WebSocket for channel
+- `unsubscribe(topic)`: Unsubscribe from a topic across managed connections
 - `close_all()`: Close all WebSocket connections
 
 ### Public Stream Methods
