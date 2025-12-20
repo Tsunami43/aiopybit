@@ -31,6 +31,11 @@ dependencies = [
     "websockets>=15.0.1",
 ]
 
+[project.optional-dependencies]
+cards = [
+    "Pillow>=10.0.0",
+]
+
 [project.urls]
 Repository = "https://github.com/Tsunami43/aiopybit.git"
 Homepage = "https://github.com/Tsunami43/aiopybit"
@@ -41,6 +46,10 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/aiopybit"]
+artifacts = [
+    "src/aiopybit/cards/assets/**/*.png",
+    "src/aiopybit/cards/assets/**/*.ttf",
+]
 
 [dependency-groups]
 dev = [
