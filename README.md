@@ -19,6 +19,7 @@ AioPyBit is a modern and convenient Python client for the [ByBit](https://www.by
 - **🛡️ Type-Safe**: Full type annotations with protocol definitions
 - **🎯 Easy Integration**: Simple async/await interface with callback handlers
 - **🧹 Connection Cleanup**: Graceful cleanup and resource management
+- **🖼️ Trading Cards**: Optional generator for shareable Bybit-style ROI cards
 
 ## 📋 Requirements
 
@@ -31,6 +32,12 @@ AioPyBit is a modern and convenient Python client for the [ByBit](https://www.by
 
 ```bash
 pip install aiopybit
+```
+
+To also install the optional trading card generator (pulls in Pillow):
+
+```bash
+pip install "aiopybit[cards]"
 ```
 
 Or install from source:
@@ -160,6 +167,44 @@ except ByBitError:
 
 Requests are retried automatically with exponential backoff on transient
 connection/timeout errors before the error is finally raised.
+
+## 🖼️ Trading Cards
+
+The optional `aiopybit.cards` module renders shareable Bybit-style ROI/PnL
+cards — the kind you can post to a Telegram or Discord channel. Install the
+extra first: `pip install "aiopybit[cards]"`.
+
+```python
+from aiopybit.cards import BybitCardGenerator
+
+generator = BybitCardGenerator()
+
+# Save to a file...
+generator.save_card(
+	symbol='BTCUSDT',
+	direction='Long',   # 'Long' or 'Short'
+	leverage=100,
+	entry_price=20000,
+	market_price=41850.5,
+	output_path='card.png',
+)
+
+# ...or get raw bytes to send straight to a bot.
+image_bytes = generator.get_card_bytes('BTCUSDT', 'Long', 100, 20000, 41850.5)
+```
+
+ROI is computed automatically from the entry/market price, direction and
+leverage, and the colours switch between green (profit) and red (loss). A
+Bybit-style background and the IBM Plex Sans fonts are bundled, so no extra
+assets are required (you can still pass your own `background_image_path` /
+`fonts_dir`).
+
+Example output:
+
+![Example trading card](assets/card_example.png)
+
+See [`examples/generate_card.py`](examples/generate_card.py) for building a
+card directly from a live position.
 
 ## 🔐 Authentication
 
