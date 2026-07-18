@@ -1,178 +1,198 @@
-# AioPyBit - Python Client for ByBit API (v5)
+# aiopybit
 
-[![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
-[![ByBit API](https://img.shields.io/badge/ByBit%20API-v5-green.svg)](https://bybit-exchange.github.io/docs/v5/)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+Asynchronous Python client for the [Bybit](https://www.bybit.com/invite?ref=D0B6GN) **v5** API — REST and WebSocket in a single, fully typed, `asyncio`-native package.
 
-AioPyBit is a modern and convenient Python client for the [ByBit](https://www.bybit.com/invite?ref=D0B6GN) cryptocurrency exchange API (v5). The module provides real-time access to market data and private account information via efficient WebSocket connections, and also supports HTTP requests with advanced error handling and auto-retry mechanisms.
+[![PyPI](https://img.shields.io/pypi/v/aiopybit.svg)](https://pypi.org/project/aiopybit/)
+[![Python versions](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://pypi.org/project/aiopybit/)
+[![CI](https://github.com/Tsunami43/aiopybit/actions/workflows/ci.yml/badge.svg)](https://github.com/Tsunami43/aiopybit/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## 🚀 Features
+---
 
-- **🔗 Advanced WebSocket Manager**: Unified manager for multiple connections and subscriptions
-- **📊 Real-time Market Data**: Access live ticker, orderbook, trades, and kline data
-- **👤 Private Account Streams**: Monitor orders, executions, positions, and wallet balances
-- **🌍 Multiple Environments**: Support for mainnet, testnet, and demo environments
-- **💪 Robust Connection Management**: Automatic ping/pong, error handling, and reconnection
-- **🔄 Enhanced Retry Mechanism**: HTTP requests with exponential backoff retry
-- **⚡ Auto-Reconnection**: WebSocket automatic reconnection with subscription restoration
-- **📝 Subscription Management**: Easy subscribe/unsubscribe with pattern matching
-- **🛡️ Type-Safe**: Full type annotations with protocol definitions
-- **🎯 Easy Integration**: Simple async/await interface with callback handlers
-- **🧹 Connection Cleanup**: Graceful cleanup and resource management
-- **🖼️ Trading Cards**: Optional generator for shareable Bybit-style ROI cards
+`aiopybit` gives you a small, predictable surface over the Bybit v5 API:
 
-## 📋 Requirements
+- **REST** — market data, orders, positions and account endpoints with request
+  signing, automatic retries (exponential backoff) and a shared `aiohttp`
+  session.
+- **WebSocket** — public and private streams behind one connection manager with
+  automatic reconnection and subscription restore.
+- **Typed** — `Literal` types for categories, intervals, modes and more; ships a
+  `py.typed` marker for full downstream type checking.
+- **Ergonomic** — one `ByBitClient` entry point, `async with` support and a
+  single `ByBitError` base exception.
+- **Optional extras** — a trading-card image generator (`aiopybit[cards]`).
 
-- Python 3.10+
-- `websockets` >= 15.0
-- `aiohttp` >= 3.12.0
-- `asyncio` (built-in)
+## Table of contents
 
-## 🛠️ Installation
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [REST API](#rest-api)
+- [WebSocket streams](#websocket-streams)
+- [Error handling](#error-handling)
+- [Trading cards](#trading-cards)
+- [Environments and categories](#environments-and-categories)
+- [Logging](#logging)
+- [API reference](#api-reference)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Installation
+
+Requires **Python 3.10+**.
 
 ```bash
 pip install aiopybit
 ```
 
-To also install the optional trading card generator (pulls in Pillow):
+Optional trading-card generator (pulls in Pillow):
 
 ```bash
 pip install "aiopybit[cards]"
 ```
 
-Or install from source:
+From source:
 
 ```bash
 git clone https://github.com/Tsunami43/aiopybit.git
 cd aiopybit
-pip install -e .
+pip install -e ".[cards]"
 ```
 
-## 🏗️ Architecture
+## Quick start
 
-### Core Components
-
-- **`ByBitWebSocketManager`**: High-level manager for multiple WebSocket connections
-- **`ByBitWebSocketClient`**: Low-level WebSocket client with connection management
-- **`ByBitPublicStreamsMixin`**: Methods for public market data streams
-- **`ByBitPrivateStreamsMixin`**: Methods for private account data streams
-- **Protocol Definitions**: Type-safe interfaces in `protocols.py`
-
-### Supported Streams
-
-#### Public Streams (No Authentication Required)
-- **Tickers**: Real-time price and volume data
-- **Orderbook**: Live order book updates with configurable depth
-- **Public Trades**: Recent trade executions
-- **Klines/Candlesticks**: OHLCV data with various intervals
-- **Liquidations**: Liquidation events
-
-#### Private Streams (API Credentials Required)
-- **Orders**: Real-time order status updates
-- **Executions**: Trade execution notifications
-- **Positions**: Position changes and P&L updates
-- **Wallet**: Account balance updates
-- **Greeks**: Option portfolio greeks (for options accounts)
-
-## 🔧 Quick Start
-
-### Simple WebSocket Manager Usage
+`ByBitClient` is the single entry point. It exposes REST methods directly and
+WebSocket subscriptions through `client.ws`. Use it as an async context manager
+so the HTTP session and every socket are closed for you:
 
 ```python
 import asyncio
-from aiopybit import ByBitClient
 
-
-client = ByBitClient(API_KEY, API_SECRET, MODE)
-
-
-async def handle_ticker(data):
-	ticker = data.get('data', {})
-	symbol = ticker.get('symbol', 'N/A')
-	price = ticker.get('lastPrice', 'N/A')
-	print(f'📊 {symbol}: ${price}')
-
-
-async def main():
-	await client.ws.subscribe_to_ticker(
-		category='spot', symbol='BTCUSDT', on_message=handle_ticker
-	)
-	try:
-		while True:
-			await asyncio.sleep(1)
-	except KeyboardInterrupt:
-		pass
-
-	await client.close()
-
-
-if __name__ == '__main__':
-	asyncio.run(main())
-```
-
-The `examples/` directory contains comprehensive usage examples:
-
-- [`stream_tickers.py`](examples/stream_tickers.py) — stream public ticker data
-- [`stream_private.py`](examples/stream_private.py) — stream private order/position/wallet updates
-- [`rest_api.py`](examples/rest_api.py) — REST trading and market-data calls
-- [`error_handling.py`](examples/error_handling.py) — catching API and HTTP errors
-
-### Recommended: Async Context Manager
-
-`ByBitClient` is an async context manager. Using `async with` guarantees that
-the HTTP session and every WebSocket connection are closed on exit:
-
-```python
-import asyncio
 from aiopybit import ByBitClient
 
 
 async def main():
-	async with ByBitClient(API_KEY, API_SECRET, 'mainnet') as client:
-		ticker = await client.get_tickers('linear', 'BTCUSDT')
-		print(ticker['result']['list'][0]['lastPrice'])
+    async with ByBitClient(api_key='...', secret_key='...', mode='testnet') as client:
+        # REST
+        tickers = await client.get_tickers('linear', 'BTCUSDT')
+        print(tickers['result']['list'][0]['lastPrice'])
+
+        # WebSocket
+        async def on_ticker(message):
+            data = message['data']
+            print(data['symbol'], data['lastPrice'])
+
+        await client.ws.subscribe_to_ticker('linear', 'BTCUSDT', on_ticker)
+        await asyncio.sleep(30)
 
 
 if __name__ == '__main__':
-	asyncio.run(main())
+    asyncio.run(main())
 ```
 
-## ⚠️ Error Handling
+`mode` is one of `mainnet`, `testnet` or `demo`. API credentials are only
+required for private (account/trading) endpoints and streams.
 
-Every error raised by the library derives from `ByBitError`, so you can catch
-that single base class or handle specific failures:
+## REST API
+
+Every REST call returns the decoded Bybit JSON response (`{'retCode': 0,
+'result': {...}, ...}`). A non-zero `retCode` raises `ByBitAPIError`, so you can
+assume success once a call returns.
 
 ```python
-from aiopybit import ByBitAPIError, ByBitHTTPError, ByBitError
+async with ByBitClient(api_key, secret_key, 'mainnet') as client:
+    # Market data (no auth required)
+    await client.get_orderbook('linear', 'BTCUSDT', limit=50)
+    await client.get_klines('linear', 'BTCUSDT', interval='15', limit=200)
+    await client.get_instruments_info('linear', 'BTCUSDT')
+
+    # Trading (auth required)
+    await client.create_order(
+        category='linear',
+        symbol='BTCUSDT',
+        side='Buy',
+        order_type='Limit',
+        qty=0.01,
+        price=30000,
+        time_in_force='PostOnly',
+    )
+    await client.cancel_all_orders('linear', symbol='BTCUSDT')
+
+    # Account and positions
+    await client.get_wallet_balance('UNIFIED')
+    await client.get_positions('linear', 'BTCUSDT')
+    await client.set_leverage('linear', 'BTCUSDT', 10)
+```
+
+See the [API reference](#api-reference) for the full list of methods.
+
+## WebSocket streams
+
+Subscriptions are managed for you: the manager opens (and reuses) one connection
+per channel, authenticates private channels, keeps them alive with ping/pong and
+restores subscriptions after a reconnect. Handlers may be plain or `async`
+functions and receive the raw message dict.
+
+```python
+async def on_kline(message):
+    for candle in message['data']:
+        print(candle['start'], candle['close'])
+
+
+async def on_order(message):
+    for order in message['data']:
+        print(order['orderId'], order['orderStatus'])
+
+
+async with ByBitClient(api_key, secret_key, 'mainnet') as client:
+    # Public — no credentials needed
+    topic = await client.ws.subscribe_to_kline('linear', 'BTCUSDT', '1', on_kline)
+
+    # Private — credentials required
+    await client.ws.subscribe_to_order(on_order)
+
+    # Later, unsubscribe by topic
+    await client.ws.unsubscribe(topic)  # 'kline.1.BTCUSDT'
+```
+
+Each `subscribe_to_*` call returns the topic string, which you can pass to
+`client.ws.unsubscribe(topic)`.
+
+## Error handling
+
+All errors derive from `ByBitError`, so a single `except` can catch everything,
+or you can handle failures precisely:
+
+```python
+from aiopybit import ByBitError, ByBitAPIError, ByBitHTTPError
 
 try:
-	await client.create_order('linear', 'BTCUSDT', 'Buy', 'Market', 1)
+    await client.create_order('linear', 'BTCUSDT', 'Buy', 'Market', 1)
 except ByBitAPIError as exc:
-	# The request reached ByBit but was rejected (non-zero retCode).
-	print(exc.ret_code, exc.ret_msg)
+    # Reached Bybit but was rejected (non-zero retCode).
+    print(exc.ret_code, exc.ret_msg)
 except ByBitHTTPError as exc:
-	# Transport-level failure (non-2xx HTTP status).
-	print(exc.status)
+    # Transport-level failure (non-2xx HTTP status).
+    print(exc.status)
 except ByBitError:
-	# Any other AioPyBit error.
-	...
+    # Anything else raised by the library.
+    ...
 ```
 
 | Exception | Raised when |
 |-----------|-------------|
-| `ByBitError` | Base class for all library errors |
-| `ByBitHTTPError` | The response has a non-successful HTTP status code |
-| `ByBitAPIError` | ByBit returns a non-zero `retCode` (carries `ret_code`, `ret_msg`) |
+| `ByBitError` | Base class for every library error |
+| `ByBitHTTPError` | Response has a non-successful HTTP status (`status`) |
+| `ByBitAPIError` | Bybit returns a non-zero `retCode` (`ret_code`, `ret_msg`, `response`) |
 | `ByBitAuthError` | WebSocket authentication fails or credentials are missing |
 
-Requests are retried automatically with exponential backoff on transient
-connection/timeout errors before the error is finally raised.
+Transient connection/timeout errors are retried automatically with exponential
+backoff before the exception is finally raised.
 
-## 🖼️ Trading Cards
+## Trading cards
 
-The optional `aiopybit.cards` module renders shareable Bybit-style ROI/PnL
-cards — the kind you can post to a Telegram or Discord channel. Install the
-extra first: `pip install "aiopybit[cards]"`.
+The optional `aiopybit.cards` module renders shareable Bybit-style ROI/PnL cards
+— handy for posting a position to a Telegram or Discord channel. Install the
+extra with `pip install "aiopybit[cards]"`.
 
 ```python
 from aiopybit.cards import BybitCardGenerator
@@ -181,12 +201,12 @@ generator = BybitCardGenerator()
 
 # Save to a file...
 generator.save_card(
-	symbol='BTCUSDT',
-	direction='Long',   # 'Long' or 'Short'
-	leverage=100,
-	entry_price=20000,
-	market_price=41850.5,
-	output_path='card.png',
+    symbol='BTCUSDT',
+    direction='Long',          # 'Long' or 'Short'
+    leverage=100,
+    entry_price=20000,
+    market_price=41850.5,
+    output_path='card.png',
 )
 
 # ...or get raw bytes to send straight to a bot.
@@ -194,200 +214,141 @@ image_bytes = generator.get_card_bytes('BTCUSDT', 'Long', 100, 20000, 41850.5)
 ```
 
 ROI is computed automatically from the entry/market price, direction and
-leverage, and the colours switch between green (profit) and red (loss). A
-Bybit-style background and the IBM Plex Sans fonts are bundled, so no extra
-assets are required (you can still pass your own `background_image_path` /
-`fonts_dir`).
-
-Example output:
+leverage; colours switch between green (profit) and red (loss). A background and
+the IBM Plex Sans fonts are bundled, so no extra assets are required — you can
+still pass your own `background_image_path` / `fonts_dir`.
 
 ![Example trading card](assets/card_example.png)
 
-See [`examples/generate_card.py`](examples/generate_card.py) for building a
-card directly from a live position.
+See [`examples/generate_card.py`](examples/generate_card.py) for building a card
+directly from a live position.
 
-## 🔐 Authentication
+## Environments and categories
 
-For private streams, you need ByBit API credentials:
+| `mode` | Description | Base host |
+|--------|-------------|-----------|
+| `mainnet` | Production | `api.bybit.com` / `stream.bybit.com` |
+| `testnet` | Testing | `api-testnet.bybit.com` / `stream-testnet.bybit.com` |
+| `demo` | Demo trading | `api-demo.bybit.com` / `stream-demo.bybit.com` |
 
-1. Create account at [ByBit](https://www.bybit.com/invite?ref=D0B6GN)
-2. Go to [API Management](https://www.bybit.com/app/user/api-management)
-3. Create new API key with appropriate permissions
-4. Use testnet for development: [ByBit Testnet](https://testnet.bybit.com/)
+| `category` | Description |
+|------------|-------------|
+| `linear` | USDT/USDC perpetual & futures contracts |
+| `inverse` | Inverse (coin-margined) contracts |
+| `spot` | Spot trading pairs |
+| `option` | Options contracts |
 
-### Required Permissions for Private Streams
-- **Read**: For position, wallet, and order data
-- **Trade**: For order and execution streams (if trading)
+## Logging
 
-## 🌐 Supported Environments
-
-| Environment | Description | WebSocket URLs |
-|-------------|-------------|----------------|
-| `mainnet` | Production environment | `wss://stream.bybit.com/v5/` |
-| `testnet` | Testing environment | `wss://stream-testnet.bybit.com/v5/` |
-| `demo` | Demo environment (limited features) | `wss://stream-demo.bybit.com/v5/` |
-
-## 📊 Market Categories
-
-| Category | Description | Supported Streams |
-|----------|-------------|-------------------|
-| `linear` | USDT/USDC perpetual contracts | All public streams |
-| `inverse` | Inverse (coin-margined) contracts | All public streams |
-| `spot` | Spot trading pairs | Tickers, orderbook, trades |
-| `option` | Options contracts | All public + greeks |
-
-## 🔄 Connection Management
-
-The client includes robust connection management features:
-
-- **Automatic Ping/Pong**: Maintains connection with 20-second intervals
-- **Error Handling**: Graceful handling of connection errors
-- **Resource Cleanup**: Proper cleanup of tasks and connections
-
-## 📖 API Reference
-
-### REST Methods (`ByBitClient`)
-
-#### Market Data
-- `get_server_time()`
-- `get_tickers(category, symbol='')`
-- `get_orderbook(category, symbol, limit=25)`
-- `get_klines(category, symbol, interval, limit=200, start=None, end=None)`
-- `get_instruments_info(category, symbol='', limit=500)`
-- `get_recent_trades(category, symbol, limit=60)`
-- `get_funding_rate_history(category, symbol, limit=200, start=None, end=None)`
-- `get_open_interest(category, symbol, interval_time, limit=50)`
-
-#### Orders
-- `create_order(category, symbol, side, order_type, qty, price=None, time_in_force=None, order_link_id=None, reduce_only=None, **extra)`
-- `amend_order(category, symbol, order_id=None, order_link_id=None, qty=None, price=None)`
-- `cancel_order(category, symbol, order_id=None, order_link_id=None)`
-- `cancel_all_orders(category, symbol='', settle_coin='')`
-- `get_orders(category, symbol='', limit=20)`
-- `get_order_history(category, symbol='', limit=50)`
-
-#### Positions
-- `get_positions(category, symbol='')`
-- `set_leverage(category, symbol, leverage)`
-- `set_trading_stop(category, symbol, take_profit=None, stop_loss=None, trailing_stop=None, position_idx=0, **extra)`
-- `switch_margin_mode(category, symbol, trade_mode, leverage)`
-- `switch_position_mode(category, mode, symbol='', coin='')`
-- `get_closed_pnl(category, symbol='', limit=50)`
-
-#### Account
-- `get_wallet_balance(account_type, coin='')`
-- `get_account_info()`
-- `get_fee_rates(category, symbol='')`
-- `get_transaction_log(account_type='UNIFIED', category='', currency='', limit=50)`
-
-### ByBitWebSocketManager
-
-High-level WebSocket manager for multiple connections and subscriptions.
-
-#### Constructor Parameters
-- `mode`: Environment ('mainnet', 'testnet', 'demo')
-- `api_key`: ByBit API key (required for private streams)
-- `api_secret`: ByBit API secret (required for private streams)
-- `ping_interval`: Ping interval in seconds (default: 20)
-- `ping_timeout`: Ping timeout in seconds (default: 10)
-- `auto_reconnect`: Enable auto-reconnection (default: True)
-
-#### Connection Management Methods
-- `get_websocket(channel_type)`: Get or create WebSocket for channel
-- `unsubscribe(topic)`: Unsubscribe from a topic across managed connections
-- `close_all()`: Close all WebSocket connections
-
-### Public Stream Methods
-- `subscribe_to_ticker(category, symbol, on_message)`
-- `subscribe_to_orderbook(category, symbol, on_message, depth)`
-- `subscribe_to_public_trades(category, symbol, on_message)`
-- `subscribe_to_kline(category, symbol, interval, on_message)`
-- `subscribe_to_liquidations(category, symbol, on_message)`
-
-### Private Stream Methods
-- `subscribe_to_order(on_message)`
-- `subscribe_to_execution(on_message)`
-- `subscribe_to_position(on_message)`
-- `subscribe_to_wallet(on_message)`
-- `subscribe_to_greeks(on_message)`
-
-### ByBitWebSocketClient
-
-Low-level WebSocket client class with connection management.
-
-#### Constructor Parameters
-- `url`: WebSocket URL
-- `api_key`: ByBit API key (optional for public streams)
-- `api_secret`: ByBit API secret (optional for public streams)
-- `ping_interval`: Ping interval in seconds (default: 20)
-- `ping_timeout`: Ping timeout in seconds (default: 10)
-- `auto_reconnect`: Enable auto-reconnection (default: True)
-
-## 📝 Logging
-
-Enable logging to monitor connection status and debug issues:
+The library logs under the `aiopybit` logger. Enable it to trace connections and
+debug issues:
 
 ```python
 import logging
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
 )
-
-# Set specific logger levels
-logging.getLogger('aiopybit').setLevel(logging.INFO)
-
-# For detailed debugging
-logging.getLogger('aiopybit').setLevel(logging.DEBUG)
+logging.getLogger('aiopybit').setLevel(logging.DEBUG)  # verbose
 ```
 
-Log levels:
-- `DEBUG`: Detailed connection and message information
-- `INFO`: Connection status and important events  
-- `WARNING`: Connection issues and recoverable errors
-- `ERROR`: Critical errors and failures
+## API reference
 
-Example log output:
+### `ByBitClient(api_key, secret_key, mode)`
+
+REST methods (all coroutines):
+
+**Market data**
+
+| Method | Endpoint |
+|--------|----------|
+| `get_server_time()` | `/v5/market/time` |
+| `get_tickers(category, symbol='')` | `/v5/market/tickers` |
+| `get_orderbook(category, symbol, limit=25)` | `/v5/market/orderbook` |
+| `get_klines(category, symbol, interval, limit=200, start=None, end=None)` | `/v5/market/kline` |
+| `get_instruments_info(category, symbol='', limit=500)` | `/v5/market/instruments-info` |
+| `get_recent_trades(category, symbol, limit=60)` | `/v5/market/recent-trade` |
+| `get_funding_rate_history(category, symbol, limit=200, start=None, end=None)` | `/v5/market/funding/history` |
+| `get_open_interest(category, symbol, interval_time, limit=50)` | `/v5/market/open-interest` |
+
+**Orders**
+
+| Method | Endpoint |
+|--------|----------|
+| `create_order(category, symbol, side, order_type, qty, price=None, time_in_force=None, order_link_id=None, reduce_only=None, **extra)` | `/v5/order/create` |
+| `amend_order(category, symbol, order_id=None, order_link_id=None, qty=None, price=None)` | `/v5/order/amend` |
+| `cancel_order(category, symbol, order_id=None, order_link_id=None)` | `/v5/order/cancel` |
+| `cancel_all_orders(category, symbol='', settle_coin='')` | `/v5/order/cancel-all` |
+| `get_orders(category, symbol='', limit=20)` | `/v5/order/realtime` |
+| `get_order_history(category, symbol='', limit=50)` | `/v5/order/history` |
+
+**Positions**
+
+| Method | Endpoint |
+|--------|----------|
+| `get_positions(category, symbol='')` | `/v5/position/list` |
+| `set_leverage(category, symbol, leverage)` | `/v5/position/set-leverage` |
+| `set_trading_stop(category, symbol, take_profit=None, stop_loss=None, trailing_stop=None, position_idx=0, **extra)` | `/v5/position/trading-stop` |
+| `switch_margin_mode(category, symbol, trade_mode, leverage)` | `/v5/position/switch-isolated` |
+| `switch_position_mode(category, mode, symbol='', coin='')` | `/v5/position/switch-mode` |
+| `get_closed_pnl(category, symbol='', limit=50)` | `/v5/position/closed-pnl` |
+
+**Account**
+
+| Method | Endpoint |
+|--------|----------|
+| `get_wallet_balance(account_type, coin='')` | `/v5/account/wallet-balance` |
+| `get_account_info()` | `/v5/account/info` |
+| `get_fee_rates(category, symbol='')` | `/v5/account/fee-rate` |
+| `get_transaction_log(account_type='UNIFIED', category='', currency='', limit=50)` | `/v5/account/transaction-log` |
+
+### `client.ws` — `ByBitWebSocketManager`
+
+**Public streams:** `subscribe_to_ticker`, `subscribe_to_orderbook`,
+`subscribe_to_public_trades`, `subscribe_to_kline`, `subscribe_to_liquidations`.
+
+**Private streams:** `subscribe_to_order`, `subscribe_to_execution`,
+`subscribe_to_position`, `subscribe_to_wallet`, `subscribe_to_greeks`.
+
+**Management:** `unsubscribe(topic)`, `close_all()`.
+
+Public subscriptions take `(category, symbol, on_message, ...)`; private ones
+take `(on_message)`. Every subscribe method returns the topic string.
+
+## Examples
+
+The [`examples/`](examples) directory contains runnable scripts:
+
+| File | What it shows |
+|------|---------------|
+| [`stream_tickers.py`](examples/stream_tickers.py) | Streaming public ticker data |
+| [`stream_private.py`](examples/stream_private.py) | Private order/position/wallet streams |
+| [`rest_api.py`](examples/rest_api.py) | REST trading and market-data calls |
+| [`error_handling.py`](examples/error_handling.py) | Catching API and HTTP errors |
+| [`generate_card.py`](examples/generate_card.py) | Rendering a trading card |
+
+## Contributing
+
+Contributions are welcome. The project uses [uv](https://docs.astral.sh/uv/) and
+[ruff](https://docs.astral.sh/ruff/):
+
+```bash
+uv sync --all-extras --dev
+uv run ruff check .
+uv run ruff format --check .
+uv run pytest -q
 ```
-2024-01-15 10:30:45 [INFO] aiopybit: WebSocket connection for wss://stream.bybit.com/v5/public/linear established
-2024-01-15 10:30:45 [INFO] aiopybit: ✅ Subscribed to tickers.BTCUSDT
-2024-01-15 10:30:46 [DEBUG] aiopybit: Sending ping for wss://stream.bybit.com/v5/public/linear
-2024-01-15 10:31:05 [INFO] aiopybit: 📊 BTCUSDT: $45,123.45
-```
 
-## 🔗 Related Links
+Please open an issue or pull request. CI runs lint, formatting and the test
+suite on Python 3.10–3.13.
 
-- [ByBit Official Website](https://www.bybit.com/)
-- [ByBit API Documentation](https://bybit-exchange.github.io/docs/v5/intro)
-- [ByBit WebSocket Documentation](https://bybit-exchange.github.io/docs/v5/ws/connect)
-- [ByBit Testnet](https://testnet.bybit.com/)
-- [ByBit API Management](https://www.bybit.com/app/user/api-management)
-- [ByBit Referal Program](https://www.bybit.com/invite?ref=D0B6GN)
+## License
 
-## 📄 License
+Released under the [MIT License](LICENSE).
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+## Disclaimer
 
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit pull requests or open issues for bugs and feature requests.
-
-### Development
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Run tests and linting
-5. Commit your changes (`git commit -m 'Add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
-
-## ⚠️ Disclaimer
-
-This software is for educational and development purposes. Use at your own risk. The authors are not responsible for any financial losses incurred through the use of this software.
-
----
-
-**Happy Trading! 🚀**
+This software is provided for educational and development purposes and is not
+affiliated with Bybit. Trading cryptocurrencies carries risk; use it at your own
+risk. The authors accept no responsibility for any financial loss.
