@@ -2,6 +2,7 @@ import asyncio
 import hmac
 import json
 import logging
+import random
 import time
 from collections.abc import Callable
 from typing import Any
@@ -24,6 +25,9 @@ class ByBitWebSocketClient:
 		api_secret: str | None = None,
 		ping_interval: int = 20,
 		auto_reconnect: bool = True,
+		reconnect_backoff_base: float = 1.0,
+		reconnect_backoff_max: float = 60.0,
+		max_reconnect_attempts: int = 0,
 	):
 		self.url = url
 		self.api_key = api_key
@@ -32,6 +36,11 @@ class ByBitWebSocketClient:
 		self.is_connected = False
 		self.ping_interval = ping_interval
 		self.auto_reconnect = auto_reconnect
+		# Reconnect backoff: delay = min(base * 2**attempt, max) plus jitter.
+		# max_reconnect_attempts of 0 means retry indefinitely.
+		self.reconnect_backoff_base = reconnect_backoff_base
+		self.reconnect_backoff_max = reconnect_backoff_max
+		self.max_reconnect_attempts = max_reconnect_attempts
 		self.topic_handlers: dict[str, Callable] = {}
 		self.ping_task: asyncio.Task | None = None
 		self.listen_task: asyncio.Task | None = None
@@ -156,40 +165,54 @@ class ByBitWebSocketClient:
 				except Exception as e:
 					logger.error('Error in handler: %s', e)
 
+	def _reconnect_delay(self, attempt: int) -> float:
+		"""Exponential backoff delay (without jitter) for a reconnect attempt."""
+		return min(
+			self.reconnect_backoff_base * (2**attempt),
+			self.reconnect_backoff_max,
+		)
+
 	async def _reconnect(self) -> None:
-		"""Attempt to reconnect to WebSocket."""
+		"""Reconnect with exponential backoff, jitter and an attempt cap."""
 		if self.is_reconnecting:
 			return
 
 		self.is_reconnecting = True
-		logger.info('Attempting to reconnect...')
+		attempt = 0
 
-		try:
-			# Wait before reconnecting
-			await asyncio.sleep(2)
+		while not self.is_connected:
+			if self.max_reconnect_attempts and attempt >= self.max_reconnect_attempts:
+				logger.error('Giving up reconnecting after %d attempts', attempt)
+				break
 
-			# Clean up old connection
-			if self.ws:
-				try:
-					await self.ws.close()
-				except Exception:
-					pass
+			# Full-jitter backoff to avoid a reconnect thundering herd.
+			delay = self._reconnect_delay(attempt)
+			delay += random.uniform(0, delay * 0.25)
+			logger.info('Reconnecting in %.2fs (attempt %d)', delay, attempt + 1)
+			await asyncio.sleep(delay)
 
-			# Reconnect
-			await self.connect()
+			try:
+				if self.ws:
+					try:
+						await self.ws.close()
+					except Exception:
+						pass
 
-			# Restore subscriptions
-			if self.topic_handlers:
-				topics = list(self.topic_handlers.keys())
-				logger.info('Restoring subscriptions: %s', topics)
-				await self.send(op='subscribe', args=topics)
+				await self.connect()
 
-			logger.info('Reconnection successful')
-			self.is_reconnecting = False
+				if self.topic_handlers:
+					topics = list(self.topic_handlers.keys())
+					logger.info('Restoring subscriptions: %s', topics)
+					await self.send(op='subscribe', args=topics)
 
-		except Exception as e:
-			logger.error('Reconnection failed: %s', e)
-			self.is_reconnecting = False
+				logger.info('Reconnected after %d attempt(s)', attempt + 1)
+			except Exception as e:
+				# connect() may set is_connected before failing during auth.
+				self.is_connected = False
+				attempt += 1
+				logger.warning('Reconnect attempt %d failed: %s', attempt, e)
+
+		self.is_reconnecting = False
 
 	async def close(self) -> None:
 		"""Close WebSocket connection."""
