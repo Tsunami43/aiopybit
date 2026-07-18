@@ -9,6 +9,7 @@ import time
 import aiohttp
 
 from aiopybit.exceptions import ByBitAPIError, ByBitHTTPError
+from aiopybit.protocols import ByBitResponse
 
 logger = logging.getLogger('aiopybit')
 
@@ -84,7 +85,7 @@ class ByBitHttpClient:
 		}
 
 	@staticmethod
-	def _check_response(data: dict) -> dict:
+	def _check_response(data: ByBitResponse) -> ByBitResponse:
 		"""Validate a decoded ByBit response and raise on a non-zero retCode."""
 		ret_code = data.get('retCode')
 		if ret_code not in (0, None):
@@ -95,7 +96,9 @@ class ByBitHttpClient:
 			)
 		return data
 
-	async def _request(self, endpoint: str, method: str, payload: str = '') -> dict:
+	async def _request(
+		self, endpoint: str, method: str, payload: str = ''
+	) -> ByBitResponse:
 		"""Make an HTTP request with retry on transient transport errors.
 
 		Retries with exponential backoff on connection/timeout errors. HTTP

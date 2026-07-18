@@ -2,37 +2,43 @@
 
 import logging
 
+from aiopybit.protocols import ByBitCategories, ByBitResponse, KlineInterval
+
 logger = logging.getLogger('aiopybit')
 
 
 class MarketMixin:
 	"""Mixin for market data endpoints."""
 
-	async def get_server_time(self) -> dict:
+	async def get_server_time(self) -> ByBitResponse:
 		"""Get ByBit server time."""
 		return await self._request('/v5/market/time', 'GET')
 
-	async def get_tickers(self, category: str, symbol: str = '') -> dict:
+	async def get_tickers(
+		self, category: ByBitCategories, symbol: str = ''
+	) -> ByBitResponse:
 		"""Get ticker information."""
 		payload = f'category={category}'
 		if symbol:
 			payload += f'&symbol={symbol}'
 		return await self._request('/v5/market/tickers', 'GET', payload)
 
-	async def get_orderbook(self, category: str, symbol: str, limit: int = 25) -> dict:
+	async def get_orderbook(
+		self, category: ByBitCategories, symbol: str, limit: int = 25
+	) -> ByBitResponse:
 		"""Get orderbook data."""
 		payload = f'category={category}&symbol={symbol}&limit={limit}'
 		return await self._request('/v5/market/orderbook', 'GET', payload)
 
 	async def get_klines(
 		self,
-		category: str,
+		category: ByBitCategories,
 		symbol: str,
-		interval: str,
+		interval: KlineInterval,
 		limit: int = 200,
 		start: int | None = None,
 		end: int | None = None,
-	) -> dict:
+	) -> ByBitResponse:
 		"""Get kline/candlestick data."""
 		payload = (
 			f'category={category}&symbol={symbol}&interval={interval}&limit={limit}'
@@ -45,10 +51,10 @@ class MarketMixin:
 
 	async def get_instruments_info(
 		self,
-		category: str,
+		category: ByBitCategories,
 		symbol: str = '',
 		limit: int = 500,
-	) -> dict:
+	) -> ByBitResponse:
 		"""Get the specification of instruments (tick size, lot size, etc.)."""
 		payload = f'category={category}&limit={limit}'
 		if symbol:
@@ -57,22 +63,22 @@ class MarketMixin:
 
 	async def get_recent_trades(
 		self,
-		category: str,
+		category: ByBitCategories,
 		symbol: str,
 		limit: int = 60,
-	) -> dict:
+	) -> ByBitResponse:
 		"""Get recent public trades for a symbol."""
 		payload = f'category={category}&symbol={symbol}&limit={limit}'
 		return await self._request('/v5/market/recent-trade', 'GET', payload)
 
 	async def get_funding_rate_history(
 		self,
-		category: str,
+		category: ByBitCategories,
 		symbol: str,
 		limit: int = 200,
 		start: int | None = None,
 		end: int | None = None,
-	) -> dict:
+	) -> ByBitResponse:
 		"""Get historical funding rates for a perpetual/futures symbol."""
 		payload = f'category={category}&symbol={symbol}&limit={limit}'
 		if start is not None:
@@ -83,11 +89,11 @@ class MarketMixin:
 
 	async def get_open_interest(
 		self,
-		category: str,
+		category: ByBitCategories,
 		symbol: str,
 		interval_time: str,
 		limit: int = 50,
-	) -> dict:
+	) -> ByBitResponse:
 		"""Get open interest of a contract over time.
 
 		Args:
