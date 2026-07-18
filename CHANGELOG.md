@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Optional trading card generator (`aiopybit.cards.BybitCardGenerator`) behind
   the `cards` extra, with bundled background and IBM Plex Sans fonts.
+- `Literal`-typed REST signatures and a `ByBitResponse` TypedDict return type;
+  the response/enum types are exported from the package root.
+- HTTP resilience: automatic clock sync on timestamp errors (`sync_time()`),
+  rate-limit-aware retries (HTTP 429/403 and retCodes 10006/10018), a
+  configurable `recv_window`, and RSA API-key signing behind the `rsa` extra.
+- WebSocket reconnection now uses exponential backoff with jitter and a
+  configurable attempt cap.
 
 ## [0.3.0] - 2025-12-15
 
