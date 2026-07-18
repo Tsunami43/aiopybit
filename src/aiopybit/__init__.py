@@ -7,6 +7,17 @@ from .exceptions import (
 	ByBitError,
 	ByBitHTTPError,
 )
+from .protocols import (
+	AccountType,
+	ByBitCategories,
+	ByBitModes,
+	ByBitResponse,
+	KlineInterval,
+	OrderbookDepth,
+	OrderSide,
+	OrderType,
+	TimeInForce,
+)
 
 __version__ = '0.3.0'
 __all__ = [
@@ -15,4 +26,13 @@ __all__ = [
 	'ByBitHTTPError',
 	'ByBitAPIError',
 	'ByBitAuthError',
+	'ByBitResponse',
+	'ByBitModes',
+	'ByBitCategories',
+	'KlineInterval',
+	'OrderbookDepth',
+	'OrderSide',
+	'OrderType',
+	'TimeInForce',
+	'AccountType',
 ]

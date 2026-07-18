@@ -3,6 +3,14 @@
 import json
 import logging
 
+from aiopybit.protocols import (
+	ByBitCategories,
+	ByBitResponse,
+	OrderSide,
+	OrderType,
+	TimeInForce,
+)
+
 logger = logging.getLogger('aiopybit')
 
 
@@ -11,17 +19,17 @@ class OrderMixin:
 
 	async def create_order(
 		self,
-		category: str,
+		category: ByBitCategories,
 		symbol: str,
-		side: str,
-		order_type: str,
+		side: OrderSide,
+		order_type: OrderType,
 		qty: float,
-		price: float = None,
-		time_in_force: str = None,
-		order_link_id: str = None,
-		reduce_only: bool = None,
+		price: float | None = None,
+		time_in_force: TimeInForce | None = None,
+		order_link_id: str | None = None,
+		reduce_only: bool | None = None,
 		**extra: object,
-	) -> dict:
+	) -> ByBitResponse:
 		"""Create a new order.
 
 		Args:
@@ -53,11 +61,11 @@ class OrderMixin:
 
 	async def cancel_order(
 		self,
-		category: str,
+		category: ByBitCategories,
 		symbol: str,
-		order_id: str = None,
-		order_link_id: str = None,
-	) -> dict:
+		order_id: str | None = None,
+		order_link_id: str | None = None,
+	) -> ByBitResponse:
 		"""Cancel an existing order."""
 		if not order_id and not order_link_id:
 			raise ValueError('Either order_id or order_link_id required')
@@ -73,10 +81,10 @@ class OrderMixin:
 
 	async def get_orders(
 		self,
-		category: str,
+		category: ByBitCategories,
 		symbol: str = '',
 		limit: int = 20,
-	) -> dict:
+	) -> ByBitResponse:
 		"""Get order list."""
 		payload = f'category={category}&limit={limit}'
 		if symbol:
@@ -85,13 +93,13 @@ class OrderMixin:
 
 	async def amend_order(
 		self,
-		category: str,
+		category: ByBitCategories,
 		symbol: str,
-		order_id: str = None,
-		order_link_id: str = None,
-		qty: float = None,
-		price: float = None,
-	) -> dict:
+		order_id: str | None = None,
+		order_link_id: str | None = None,
+		qty: float | None = None,
+		price: float | None = None,
+	) -> ByBitResponse:
 		"""Modify an existing order."""
 		if not order_id and not order_link_id:
 			raise ValueError('Either order_id or order_link_id required')
@@ -111,10 +119,10 @@ class OrderMixin:
 
 	async def cancel_all_orders(
 		self,
-		category: str,
+		category: ByBitCategories,
 		symbol: str = '',
 		settle_coin: str = '',
-	) -> dict:
+	) -> ByBitResponse:
 		"""Cancel all open orders.
 
 		Provide ``symbol`` or ``settle_coin`` to scope the cancellation for
@@ -129,10 +137,10 @@ class OrderMixin:
 
 	async def get_order_history(
 		self,
-		category: str,
+		category: ByBitCategories,
 		symbol: str = '',
 		limit: int = 50,
-	) -> dict:
+	) -> ByBitResponse:
 		"""Get historical (closed/cancelled/filled) orders."""
 		payload = f'category={category}&limit={limit}'
 		if symbol:

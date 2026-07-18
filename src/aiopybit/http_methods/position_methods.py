@@ -3,20 +3,31 @@
 import json
 import logging
 
+from aiopybit.protocols import (
+	ByBitCategories,
+	ByBitResponse,
+	PositionMode,
+	TradeMode,
+)
+
 logger = logging.getLogger('aiopybit')
 
 
 class PositionMixin:
 	"""Mixin for position endpoints."""
 
-	async def get_positions(self, category: str, symbol: str = '') -> dict:
+	async def get_positions(
+		self, category: ByBitCategories, symbol: str = ''
+	) -> ByBitResponse:
 		"""Get position list."""
 		payload = f'category={category}'
 		if symbol:
 			payload += f'&symbol={symbol}'
 		return await self._request('/v5/position/list', 'GET', payload)
 
-	async def set_leverage(self, category: str, symbol: str, leverage: float) -> dict:
+	async def set_leverage(
+		self, category: ByBitCategories, symbol: str, leverage: float
+	) -> ByBitResponse:
 		"""Set leverage for trading pair."""
 		payload = {
 			'category': category,
@@ -30,14 +41,14 @@ class PositionMixin:
 
 	async def set_trading_stop(
 		self,
-		category: str,
+		category: ByBitCategories,
 		symbol: str,
-		take_profit: float = None,
-		stop_loss: float = None,
-		trailing_stop: float = None,
+		take_profit: float | None = None,
+		stop_loss: float | None = None,
+		trailing_stop: float | None = None,
 		position_idx: int = 0,
 		**extra: object,
-	) -> dict:
+	) -> ByBitResponse:
 		"""Set take-profit, stop-loss or trailing-stop on an open position."""
 		payload = {
 			'category': category,
@@ -57,11 +68,11 @@ class PositionMixin:
 
 	async def switch_margin_mode(
 		self,
-		category: str,
+		category: ByBitCategories,
 		symbol: str,
-		trade_mode: int,
+		trade_mode: TradeMode,
 		leverage: float,
-	) -> dict:
+	) -> ByBitResponse:
 		"""Switch between cross (0) and isolated (1) margin for a symbol."""
 		payload = {
 			'category': category,
@@ -76,11 +87,11 @@ class PositionMixin:
 
 	async def switch_position_mode(
 		self,
-		category: str,
-		mode: int,
+		category: ByBitCategories,
+		mode: PositionMode,
 		symbol: str = '',
 		coin: str = '',
-	) -> dict:
+	) -> ByBitResponse:
 		"""Switch between one-way (0) and hedge (3) position mode."""
 		payload = {'category': category, 'mode': mode}
 		if symbol:
@@ -93,10 +104,10 @@ class PositionMixin:
 
 	async def get_closed_pnl(
 		self,
-		category: str,
+		category: ByBitCategories,
 		symbol: str = '',
 		limit: int = 50,
-	) -> dict:
+	) -> ByBitResponse:
 		"""Get closed profit and loss records."""
 		payload = f'category={category}&limit={limit}'
 		if symbol:
