@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-18
+
 ### Added
 
 - Optional trading card generator (`aiopybit.cards.BybitCardGenerator`) behind
@@ -18,6 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   configurable `recv_window`, and RSA API-key signing behind the `rsa` extra.
 - WebSocket reconnection now uses exponential backoff with jitter and a
   configurable attempt cap.
+- GitHub Actions workflow to publish to PyPI on `v*` tags.
+- Trove classifiers (Python 3.10–3.13, typed, async) in the package metadata.
+
+### Changed
+
+- Rewrote the README with a professional, library-style layout.
 
 ## [0.3.0] - 2025-12-15
 
@@ -55,6 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial public release: WebSocket manager with public/private streams,
   auto-reconnection, and a REST client with retry/backoff.
 
-[Unreleased]: https://github.com/Tsunami43/aiopybit/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/Tsunami43/aiopybit/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/Tsunami43/aiopybit/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Tsunami43/aiopybit/compare/v0.1.2...v0.3.0
 [0.1.2]: https://github.com/Tsunami43/aiopybit/releases/tag/v0.1.2
