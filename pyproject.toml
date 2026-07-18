@@ -50,6 +50,9 @@ dependencies = [
 cards = [
     "Pillow>=10.0.0",
 ]
+rsa = [
+    "cryptography>=42.0.0",
+]
 
 [project.urls]
 Repository = "https://github.com/Tsunami43/aiopybit.git"
